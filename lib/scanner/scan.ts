@@ -45,7 +45,7 @@ async function fetchPinned(url: URL): Promise<PinnedResponse> {
       redirect: "manual",
       cache: "no-store",
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      headers: { "User-Agent": "CollabShield/2.1 Security Header Scanner", Accept: "text/html,*/*;q=0.1" },
+      headers: { "User-Agent": "ShieldCircle/2.1 Security Header Scanner", Accept: "text/html,*/*;q=0.1" },
       dispatcher,
     } as RequestInit & { dispatcher: Dispatcher });
     return { response, dispatcher, target };

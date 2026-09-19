@@ -8,4 +8,4 @@ Do not access data that is not yours, degrade service, or test third-party targe
 
 ## Scope
 
-This process covers CollabShield itself. Findings about scanned websites must be reported to their respective owners. Security fixes target the latest `main` branch.
+This process covers ShieldCircle itself. Findings about scanned websites must be reported to their respective owners. Security fixes target the latest `main` branch.

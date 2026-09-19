@@ -10,7 +10,7 @@ const buckets = new Map<string, Bucket>();
 const hasRedis = Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 const distributedLimiter = hasRedis ? new Ratelimit({
   redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(MAX_REQUESTS, "1 m"),
-  prefix: "collabshield:scan", analytics: true,
+  prefix: "shieldcircle:scan", analytics: true,
 }) : null;
 
 function consumeLocal(identifier: string, now: number): QuotaResult {

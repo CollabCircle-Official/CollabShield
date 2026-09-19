@@ -36,7 +36,7 @@ export function ScoreGuide() {
           <thead><tr><th scope="col">Security score</th><th scope="col">Grade</th></tr></thead>
           <tbody>{GRADES.map(([range, grade]) => <tr key={grade}><td>{range}</td><td><strong>{grade}</strong></td></tr>)}</tbody>
         </table>
-        <small>Grades are CollabShield risk indicators based on OWASP-aligned header checks, not an official certification.</small>
+        <small>Grades are ShieldCircle risk indicators based on OWASP-aligned header checks, not an official certification.</small>
       </div>
     </dialog>
   </>;

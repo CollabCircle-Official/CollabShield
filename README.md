@@ -1,8 +1,8 @@
-# CollabShield
+# ShieldCircle
 
 > Know what protects your website.
 
-CollabShield is a lightweight, browser-based HTTP Security Header & Threat Scanner from **CollabCircle**. Enter a public domain and receive a clear 0–100 security score, an A+–F grade, and an actionable breakdown of the HTTP response headers that help protect the site.
+ShieldCircle is a lightweight, browser-based HTTP Security Header & Threat Scanner from **CollabCircle**. Enter a public domain and receive a clear 0–100 security score, an A+–F grade, and an actionable breakdown of the HTTP response headers that help protect the site.
 
 It is built with Next.js and deliberately requires no database. The browser submits a URL to a server-side API route, which safely requests the target and evaluates its response headers without exposing the browser to cross-origin restrictions.
 
@@ -12,7 +12,7 @@ It is built with Next.js and deliberately requires no database. The browser subm
 
 | Desktop | Mobile |
 | --- | --- |
-| ![CollabShield desktop interface](public/screenshots/collabshield-desktop.png) | ![CollabShield mobile interface](public/screenshots/collabshield-mobile.png) |
+| ![ShieldCircle desktop interface](public/screenshots/shieldcircle-desktop.png) | ![ShieldCircle mobile interface](public/screenshots/shieldcircle-mobile.png) |
 
 ## Features
 
@@ -65,7 +65,7 @@ The weights total 100. Passing controls receive full credit. Warnings and partia
 | 50–64 | D |
 | 0–49 | F |
 
-CollabShield reports configuration signals; it does not prove that a target is secure and is not a replacement for a full security audit or penetration test. A failed check means that a header-level defense was not observed—not that an exploitable vulnerability has been confirmed.
+ShieldCircle reports configuration signals; it does not prove that a target is secure and is not a replacement for a full security audit or penetration test. A failed check means that a header-level defense was not observed—not that an exploitable vulnerability has been confirmed.
 
 ## System flow
 
@@ -107,14 +107,14 @@ sequenceDiagram
 ## Architecture
 
 ```text
-CollabShield/
+ShieldCircle/
 ├── app/
 │   ├── api/scan/route.ts       # Serverless scan endpoint
 │   ├── globals.css             # Theme and responsive styles
 │   ├── layout.tsx              # Metadata, fonts, root document
 │   └── page.tsx                # Landing page composition
 ├── components/
-│   ├── brand.tsx               # Shared CollabShield identity
+│   ├── brand.tsx               # Shared ShieldCircle identity
 │   ├── icons.tsx               # Lightweight inline SVG icons
 │   ├── scan-report.tsx         # Interactive result breakdown
 │   ├── scanner.tsx             # Client form and request state
@@ -149,8 +149,8 @@ The project uses a unified Next.js structure. The UI and serverless backend rema
 ### Installation
 
 ```bash
-git clone https://github.com/CollabCircle-Official/CollabShield.git
-cd CollabShield
+git clone https://github.com/CollabCircle-Official/ShieldCircle.git
+cd ShieldCircle
 npm install
 ```
 
@@ -228,7 +228,7 @@ The route permits ten scans per client per minute. Production uses a shared Upst
 
 ## Security model
 
-Fetching user-supplied URLs introduces Server-Side Request Forgery risk. CollabShield reduces this risk by:
+Fetching user-supplied URLs introduces Server-Side Request Forgery risk. ShieldCircle reduces this risk by:
 
 1. Accepting only HTTP and HTTPS URLs without credentials or custom ports.
 2. Resolving the hostname before connecting.
@@ -283,7 +283,7 @@ Add a new rule to `lib/scanner/rules.ts`, update the weights so the total remain
 
 ## Privacy and responsible use
 
-CollabShield does not intentionally retain submitted URLs or scan results. Hosting-provider request logs may still record metadata, so review provider logging settings before deployment. Only scan systems you are authorized to assess, respect target terms and rate limits, and do not treat the report as certification.
+ShieldCircle does not intentionally retain submitted URLs or scan results. Hosting-provider request logs may still record metadata, so review provider logging settings before deployment. Only scan systems you are authorized to assess, respect target terms and rate limits, and do not treat the report as certification.
 
 ## License
 
@@ -291,4 +291,4 @@ Released under the [MIT License](LICENSE).
 
 ---
 
-CollabShield is a product of **CollabCircle**.
+ShieldCircle is a product of **CollabCircle**.

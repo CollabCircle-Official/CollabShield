@@ -9,4 +9,4 @@
 
 ## 0.1.0
 
-- Initial CollabShield scanner and responsive report interface.
+- Initial ShieldCircle scanner and responsive report interface.

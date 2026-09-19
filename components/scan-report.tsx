@@ -15,13 +15,13 @@ export function ScanReport({ result }: { result: ScanResult }) {
     const href = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = href;
-    link.download = `collabshield-${new URL(result.finalUrl).hostname}-${result.scannedAt.slice(0, 10)}.json`;
+    link.download = `shieldcircle-${new URL(result.finalUrl).hostname}-${result.scannedAt.slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(href);
   }
 
   async function copySummary() {
-    await navigator.clipboard.writeText(`CollabShield: ${new URL(result.finalUrl).hostname} scored ${result.score}/100 (${result.grade}). ${result.passed}/${result.total} controls fully passed.`);
+    await navigator.clipboard.writeText(`ShieldCircle: ${new URL(result.finalUrl).hostname} scored ${result.score}/100 (${result.grade}). ${result.passed}/${result.total} controls fully passed.`);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
   }
