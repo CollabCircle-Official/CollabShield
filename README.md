@@ -2,13 +2,17 @@
 
 > Know what protects your website.
 
-ShieldCircle is a lightweight, browser-based HTTP Security Header & Threat Scanner from **CollabCircle**. Enter a public domain and receive a clear 0–100 security score, an A+–F grade, and an actionable breakdown of the HTTP response headers that help protect the site.
+[ShieldCircle](https://shieldcircle.vercel.app) is a lightweight, browser-based HTTP Security Header & Threat Scanner built by **CollabCircle**. It inspects a public website's response, evaluates important browser security controls, and presents a 0-100 score, an A+ through F grade, evidence, and remediation guidance.
 
-It is built with Next.js and deliberately requires no database. The browser submits a URL to a server-side API route, which safely requests the target and evaluates its response headers without exposing the browser to cross-origin restrictions.
+**Live application:** [https://shieldcircle.vercel.app](https://shieldcircle.vercel.app)
+
+ShieldCircle uses a Next.js server route to scan outside the browser, avoiding browser CORS restrictions. It requires neither user accounts nor a scan-history database.
+
+## Important scope
+
+ShieldCircle reports signals observed in one HTTP response. It does **not** prove that a website is secure, confirm exploitability, certify compliance, or replace a penetration test. Results can vary by path, geographic edge, authentication state, cookies, user agent, and deployment. Only scan systems you own or are authorized to assess.
 
 ## UI snapshots
-
-> Screenshots are generated from the running application and stored in `public/screenshots/` during the release verification workflow.
 
 | Desktop | Mobile |
 | --- | --- |
@@ -16,274 +20,295 @@ It is built with Next.js and deliberately requires no database. The browser subm
 
 ## Features
 
-- Public HTTP/HTTPS domain scanning through a Next.js serverless route
-- Six OWASP-aligned security-header checks
-- Context-aware CSP3 analysis for nonces, hashes, `strict-dynamic`, compatibility tokens, multiple policies, and defense-in-depth directives
-- Confidence labels and evidence explaining every decision
-- Report-only CSP, Trusted Types, CSP reporting, and redirect-chain visibility
-- Downloadable JSON reports, clipboard summaries, and print-friendly output
-- Best-effort API throttling with rate-limit response headers
-- Non-scored cross-origin isolation, transport, and technology-disclosure observations
-- TLS certificate expiry/protocol and defensive cookie-attribute observations
-- Bounded HTML sampling for obvious mixed-content and meta-referrer signals
-- Contextual CORS observations without treating the absence of CORS as a vulnerability
-- Local JSON report comparison without retaining scan history
-- Strict per-request nonce CSP and production response security headers
-- GitHub Actions quality gates, Playwright browser tests, and Dependabot updates
-- Weighted 0–100 score and A+ through F grade
-- Severity labels, observed values, attack vectors, and remediation guidance
-- Safe manual redirect handling with validation at every hop
-- SSRF defenses against localhost, private, link-local, and reserved networks
-- DNS-pinned outbound connections that close the validation-to-connection rebinding gap
-- Ten-second request timeout and five-redirect ceiling
-- Responsive black-and-green security console interface
-- Accessible form feedback, semantic report controls, and reduced-motion support
-- Smooth loading and report transitions
-- No database and no scan-history retention
-- Social links loaded from server-side environment variables
-- Unit-tested score calculation and URL normalization
+- Public HTTP/HTTPS scanning through a Next.js serverless route
+- Six weighted, OWASP-aligned security-header checks
+- Context-aware CSP Level 3 analysis for nonces, hashes, `strict-dynamic`, Trusted Types, reporting, and multiple policies
+- Evidence, confidence, severity, attack-vector, and remediation details
+- Redirect-chain visibility with validation at every hop
+- Supplemental TLS, cookie, HTTPS, CORS, cross-origin isolation, mixed-content, and technology-disclosure observations
+- JSON export, clipboard summary, printing, and local report comparison
+- Responsive black-and-green interface with accessible interaction and reduced-motion support
+- Distributed Upstash Redis rate limiting and deployment health monitoring
+- Privacy-conscious structured logs with request IDs and hashed target identifiers
+- Nonce-based CSP and hardened application response headers
+- Automated unit, integration, browser, mobile, and accessibility tests
+- GitHub Actions quality gates and Dependabot updates
 
-## Security headers evaluated
+## Scoring methodology
 
-| Header | Weight | Primary risk addressed | Strong result |
+| Control | Weight | Main risk addressed | Strong configuration |
 | --- | ---: | --- | --- |
-| `Content-Security-Policy` | 30 | XSS and content injection | Nonce/hash-based strict CSP with supporting defense-in-depth directives |
-| `Strict-Transport-Security` | 20 | MitM interception and SSL stripping | Present with `max-age` of at least one year |
-| Frame protection | 15 | Clickjacking | CSP `frame-ancestors`, or `X-Frame-Options` for legacy compatibility |
+| `Content-Security-Policy` | 30 | XSS and content injection | Nonce/hash-based strict CSP with defense-in-depth directives |
+| `Strict-Transport-Security` | 20 | MitM interception and SSL stripping | At least one year of `max-age` |
+| Frame protection | 15 | Clickjacking | CSP `frame-ancestors`, with XFO recognized for legacy compatibility |
 | `X-Content-Type-Options` | 15 | MIME confusion | `nosniff` |
-| `Referrer-Policy` | 10 | URL and browsing-context leakage | Explicit privacy-preserving value; browser fallback is identified separately |
-| `Permissions-Policy` | 10 | Unnecessary browser capability access | Common sensitive capabilities are explicitly restricted |
+| `Referrer-Policy` | 10 | URL and browsing-context leakage | Explicit privacy-preserving policy |
+| `Permissions-Policy` | 10 | Unnecessary browser capabilities | Sensitive capabilities explicitly restricted |
 
-The weights total 100. Passing controls receive full credit. Warnings and partially effective controls receive a rule-specific proportion based on the protection observed. A missing optional defense may retain limited fallback credit when modern browsers provide a meaningful default; that state is clearly identified with its confidence level.
+Passing controls receive full credit. Partially effective configurations receive rule-specific partial credit. A missing optional control may receive limited fallback credit where modern browsers provide a meaningful default.
 
 | Score | Grade |
 | ---: | :---: |
-| 95–100 | A+ |
-| 85–94 | A |
-| 75–84 | B |
-| 65–74 | C |
-| 50–64 | D |
-| 0–49 | F |
+| 95-100 | A+ |
+| 85-94 | A |
+| 75-84 | B |
+| 65-74 | C |
+| 50-64 | D |
+| 0-49 | F |
 
-ShieldCircle reports configuration signals; it does not prove that a target is secure and is not a replacement for a full security audit or penetration test. A failed check means that a header-level defense was not observed—not that an exploitable vulnerability has been confirmed.
+The methodology version is included in every report. A warning means a defense is absent or weaker than the benchmark; it is not proof of an active vulnerability. See the live [methodology page](https://shieldcircle.vercel.app/methodology).
 
 ## System flow
 
 ```mermaid
 flowchart LR
-    U[User enters a domain] --> C[Client validates input]
+    U[User enters a public URL] --> C[Client validates input]
     C -->|POST /api/scan| A[Next.js API route]
-    A --> N[Normalize URL]
-    N --> D[Resolve DNS and reject private IPs]
-    D --> F[Fetch with timeout and manual redirects]
-    F -->|Each redirect| D
-    F --> E[Evaluate six header rules]
-    E --> S[Calculate score and grade]
-    S -->|JSON| R[Interactive browser report]
+    A --> L[Apply distributed rate limit]
+    L --> N[Normalize and validate URL]
+    N --> D[Resolve DNS and reject unsafe IPs]
+    D --> P[Pin connection to validated address]
+    P --> F[Fetch with timeout and manual redirects]
+    F -->|Redirect| N
+    F --> H[Evaluate headers and observations]
+    H --> S[Calculate score and grade]
+    S -->|Structured JSON| R[Interactive report]
 ```
-
-### Request sequence
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant UI as Next.js UI
+    participant UI as ShieldCircle UI
     participant API as /api/scan
+    participant Redis as Upstash Redis
     participant DNS as DNS resolver
     participant Target as Target website
-
     User->>UI: Submit example.com
-    UI->>API: POST { url }
+    UI->>API: POST URL
+    API->>Redis: Check client quota
+    Redis-->>API: Allow or reject
     API->>DNS: Resolve hostname
-    DNS-->>API: Public IP address(es)
-    API->>Target: GET with redirect=manual
-    Target-->>API: Status and response headers
-    Note over API,Target: Redirect destinations are resolved and checked again
-    API->>API: Evaluate rules and calculate grade
-    API-->>UI: Structured ScanResult JSON
-    UI-->>User: Score, findings, and remediation
+    DNS-->>API: Public address
+    API->>Target: Pinned GET request
+    Target-->>API: Headers and bounded sample
+    Note over API,Target: Redirects repeat validation
+    API->>API: Evaluate and score
+    API-->>UI: Structured result
 ```
 
 ## Architecture
 
 ```text
 ShieldCircle/
-├── app/
-│   ├── api/scan/route.ts       # Serverless scan endpoint
-│   ├── globals.css             # Theme and responsive styles
-│   ├── layout.tsx              # Metadata, fonts, root document
-│   └── page.tsx                # Landing page composition
-├── components/
-│   ├── brand.tsx               # Shared ShieldCircle identity
-│   ├── icons.tsx               # Lightweight inline SVG icons
-│   ├── scan-report.tsx         # Interactive result breakdown
-│   ├── scanner.tsx             # Client form and request state
-│   ├── score-ring.tsx          # Grade visualization
-│   ├── site-footer.tsx         # Environment-driven social links
-│   └── site-header.tsx         # Responsive navigation
-├── lib/
-│   ├── scanner/
-│   │   ├── rules.ts            # Header rules and weights
-│   │   ├── scan.ts             # Safe target-fetch orchestration
-│   │   ├── score.ts            # Evaluation and grade calculation
-│   │   ├── types.ts            # Shared scanner contracts
-│   │   └── url-security.ts     # URL normalization and SSRF checks
-│   └── socials.ts              # Server-only environment mapping
-├── public/screenshots/         # Documentation images
-├── .env.example                # Safe environment template
-├── next.config.ts
-├── package.json
-└── vitest.config.ts
+|-- app/
+|   |-- api/health/route.ts       # Readiness endpoint
+|   |-- api/scan/route.ts         # Rate-limited scan endpoint
+|   |-- faq/                      # FAQ page
+|   |-- methodology/              # Scoring documentation
+|   |-- privacy/                  # Privacy page
+|   |-- terms/                    # Responsible-use terms
+|   |-- global-error.tsx
+|   |-- layout.tsx
+|   |-- page.tsx
+|   |-- robots.ts
+|   `-- sitemap.ts
+|-- components/                   # Modular interface components
+|-- lib/
+|   |-- scanner/
+|   |   |-- csp.ts                # CSP parser and analysis
+|   |   |-- observations.ts       # Non-scored signals
+|   |   |-- rules.ts              # Weighted header rules
+|   |   |-- scan.ts               # Safe fetch orchestration
+|   |   |-- score.ts              # Score and grade calculation
+|   |   |-- tls.ts                # TLS inspection
+|   |   |-- types.ts              # Shared contracts
+|   |   `-- url-security.ts       # URL, DNS, and SSRF checks
+|   |-- concurrency.ts
+|   |-- logging.ts
+|   |-- rate-limit.ts
+|   |-- request-body.ts
+|   |-- site.ts
+|   `-- socials.ts
+|-- public/screenshots/
+|-- tests/e2e/
+|-- proxy.ts                      # Per-request nonce CSP
+|-- next.config.ts                # Security headers
+|-- playwright.config.ts
+|-- vercel.json
+`-- vitest.config.ts
 ```
 
-The project uses a unified Next.js structure. The UI and serverless backend remain separated by module and runtime boundary without maintaining two independent applications.
+The unified App Router project separates UI, API orchestration, evaluation, transport safeguards, and shared contracts into focused modules.
+
+## Technology
+
+- Next.js 16 App Router, React 19, and TypeScript
+- Upstash Redis and `@upstash/ratelimit`
+- Undici for controlled outbound requests
+- Vitest, Playwright, and Axe
+- Vercel production hosting
 
 ## Local setup
 
-### Requirements
-
-- Node.js 20.9 or later
-- npm 10 or later
-- Internet access for target scans and Google-hosted font retrieval during the production build
-
-### Installation
+Requirements: Node.js 20.9 or newer, npm, and internet access for installation and target scans.
 
 ```bash
-git clone https://github.com/CollabCircle-Official/ShieldCircle.git
+git clone <repository-url> ShieldCircle
 cd ShieldCircle
 npm install
-```
-
-Create the local environment file:
-
-```bash
 cp .env.example .env
+npm run dev
 ```
 
-On PowerShell:
+PowerShell equivalent for the environment file:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Replace the example values with the full HTTPS URLs for CollabCircle, then start the development server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). Development uses an in-memory rate limiter if Upstash is absent. Production fails closed unless distributed limiting is configured.
 
 ## Environment variables
 
-The names intentionally match CollabCircle's existing environment contract. These variables remain server-side; the application validates them and passes only safe HTTPS links to the header and footer.
+Names are case-sensitive. Social links are read server-side, accepted only as HTTPS URLs, and omitted when invalid or empty.
 
-| Variable | Purpose | Example |
-| --- | --- | --- |
-| `Website` | CollabCircle website | `https://collabcircle.example` |
-| `Facebook` | Facebook page | `https://facebook.com/collabcircle` |
-| `Instagram` | Instagram profile | `https://instagram.com/collabcircle` |
-| `Linkedin` | LinkedIn company page | `https://linkedin.com/company/collabcircle` |
-| `X` | X profile | `https://x.com/collabcircle` |
-| `YouTube` | YouTube channel | `https://youtube.com/@collabcircle` |
-| `UPSTASH_REDIS_REST_URL` | Shared production rate-limit endpoint | Provider value |
-| `UPSTASH_REDIS_REST_TOKEN` | Shared production rate-limit credential | Secret provider value |
-| `TRUSTED_IP_HEADER` | Client IP header set by a trusted proxy | `x-forwarded-for` |
-| `ALLOW_IN_MEMORY_RATE_LIMIT` | Local production-like override only | `false` |
+| Variable | Production | Purpose | Example |
+| --- | :---: | --- | --- |
+| `Website` | Optional | CollabCircle website | `https://collabcircle.example` |
+| `Facebook` | Optional | Facebook page | `https://facebook.com/collabcircle` |
+| `Instagram` | Optional | Instagram profile | `https://instagram.com/collabcircle` |
+| `Linkedin` | Optional | LinkedIn company page | `https://linkedin.com/company/collabcircle` |
+| `X` | Optional | X profile | `https://x.com/collabcircle` |
+| `YouTube` | Optional | YouTube channel | `https://youtube.com/@collabcircle` |
+| `SITE_URL` | Required | Canonical origin for metadata, sitemap, and robots | `https://shieldcircle.vercel.app` |
+| `UPSTASH_REDIS_REST_URL` | Required | Shared Redis REST endpoint | Supplied by Upstash |
+| `UPSTASH_REDIS_REST_TOKEN` | Required | Secret Redis REST credential | Supplied by Upstash |
+| `TRUSTED_IP_HEADER` | Platform-specific | Trusted proxy's client-IP header | Leave unset on Vercel |
+| `ALLOW_IN_MEMORY_RATE_LIMIT` | No | Local production-like override | `false` |
 
-Missing or invalid values are omitted from the interface. The `.env` file is excluded from Git; `.env.example` is safe to commit.
+Never expose or commit the Upstash token. `.env` is ignored by Git; `.env.example` contains safe placeholders.
+
+### Vercel configuration
+
+Add values under **Project Settings -> Environment Variables**, then redeploy:
+
+```env
+SITE_URL=https://shieldcircle.vercel.app
+UPSTASH_REDIS_REST_URL=<Upstash REST URL>
+UPSTASH_REDIS_REST_TOKEN=<Upstash REST token>
+ALLOW_IN_MEMORY_RATE_LIMIT=false
+```
+
+Leave `TRUSTED_IP_HEADER` unset on Vercel; ShieldCircle detects Vercel automatically. Apply required values to Production and, if scanning should work in preview deployments, Preview.
 
 ## API
 
 ### `POST /api/scan`
 
-Request:
+```json
+{ "url": "example.com" }
+```
+
+Successful output includes requested/final URLs, HTTP status, timing, redirect chain, TLS metadata, score, grade, findings, observations, and methodology version. The production route permits ten scans per client per minute with an Upstash sliding window. It may return `400`, `413`, `429`, `503`, or `504`; responses are not cached.
+
+Relevant response headers include `X-Request-Id`, `X-RateLimit-Remaining`, and `Retry-After`.
+
+### `GET /api/health`
+
+[https://shieldcircle.vercel.app/api/health](https://shieldcircle.vercel.app/api/health)
+
+Healthy production response:
 
 ```json
 {
-  "url": "example.com"
+  "status": "ok",
+  "service": "shieldcircle",
+  "version": "unknown",
+  "distributedRateLimit": true
 }
 ```
 
-Successful responses contain the normalized and final URLs, HTTP status, scan time, score, grade, and one structured result for each security rule.
-
-```json
-{
-  "requestedUrl": "https://example.com/",
-  "finalUrl": "https://example.com/",
-  "statusCode": 200,
-  "methodologyVersion": "2.1",
-  "score": 35,
-  "grade": "F",
-  "passed": 2,
-  "total": 6,
-  "redirectChain": [{ "url": "https://example.com/", "statusCode": 200 }],
-  "findings": []
-}
-```
-
-Errors use a suitable HTTP status and `{ "error": "..." }`. Requests are not cached.
-
-The route permits ten scans per client per minute. Production uses a shared Upstash Redis sliding window and fails closed with `503` if distributed limiting is not configured. Development uses an in-memory limiter. Responses include `Retry-After`, `X-RateLimit-Remaining`, and a traceable `X-Request-Id` where applicable.
+A production deployment without distributed rate limiting reports `misconfigured` with HTTP `503`.
 
 ## Security model
 
-Fetching user-supplied URLs introduces Server-Side Request Forgery risk. ShieldCircle reduces this risk by:
+Fetching user-controlled URLs creates SSRF risk. ShieldCircle reduces it by:
 
-1. Accepting only HTTP and HTTPS URLs without credentials or custom ports.
-2. Resolving the hostname before connecting.
-3. Rejecting any hostname that resolves to local, private, link-local, multicast, or reserved address space.
-4. Pinning the outbound socket to the validated DNS result while retaining TLS hostname verification.
-5. Disabling automatic redirects and repeating resolution, validation, and connection pinning for every destination.
-6. Capping requests at five redirects and ten seconds.
-7. Limiting the JSON request body and returning no target response body to the browser.
+1. Accepting only HTTP/HTTPS without credentials or custom ports.
+2. Resolving hostnames before connecting.
+3. Rejecting local, private, link-local, multicast, reserved, and unsafe address ranges.
+4. Pinning connections to validated addresses while retaining TLS hostname verification.
+5. Handling redirects manually and repeating checks at every hop.
+6. Limiting scans to five redirects and a ten-second target timeout.
+7. Limiting request bodies and sampling at most 512 KiB of eligible HTML.
+8. Returning findings instead of target response bodies.
+9. Limiting concurrent scans per application instance.
+10. Applying distributed per-client rate limiting in production.
 
-For a public deployment, add platform-level rate limiting, abuse monitoring, and egress firewall rules appropriate to the hosting provider. Application-level validation and connection pinning are important layers but are not a complete substitute for network-level egress controls.
+The app also sends a nonce CSP, HSTS, frame and MIME protection, Referrer Policy, Permissions Policy, COOP, and CORP. Application safeguards do not replace managed bot protection, monitoring, or provider-level egress controls.
+
+## Privacy
+
+ShieldCircle has no accounts or scan-history database and does not intentionally retain URLs or reports. Application logs hash target identifiers instead of recording raw target URLs. Vercel, Upstash, DNS providers, and target servers may still process operational metadata under their own configurations and policies. See the [privacy page](https://shieldcircle.vercel.app/privacy).
 
 ## Commands
 
-| Command | Action |
+| Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the local Next.js development server |
-| `npm run build` | Create an optimized production build |
-| `npm start` | Serve the production build |
-| `npm run lint` | Run ESLint and Next.js rules |
-| `npm test` | Run the Vitest suite once |
-| `npm run test:watch` | Run tests in watch mode |
+| `npm run dev` | Start development |
+| `npm run build` | Build for production |
+| `npm start` | Serve a production build |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run 28 Vitest tests |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:e2e` | Run 8 desktop/mobile and accessibility checks |
+| `npm run test:e2e:update` | Update Playwright snapshots |
+| `npm run check` | Run lint, tests, TypeScript, and build |
+
+## Quality gates
+
+The suite currently has 28 unit/integration tests across six files and 8 end-to-end checks across desktop Chromium and a mobile viewport. Axe checks serious accessibility violations. GitHub Actions runs lint, tests, TypeScript, a high-severity dependency audit, build, and browser checks on pull requests and `main`.
+
+```bash
+npm run check
+npm run test:e2e
+```
 
 ## Deployment
 
-The project can be deployed to Vercel or another Node.js platform supporting Next.js server routes.
+ShieldCircle needs a Node.js-capable runtime because `/api/scan` performs server-side networking; static-only hosting is unsupported.
 
-1. Import the repository into the hosting platform.
-2. Add all six social environment variables.
-3. Ensure the runtime permits outbound DNS and HTTP/HTTPS requests.
-4. Run `npm run build` as the build command.
-5. Add rate limits and platform egress restrictions before advertising a public scanning service.
+### Vercel checklist
 
-### Required production controls
+1. Import the Git repository.
+2. Add the desired social variables.
+3. Add `SITE_URL`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN`.
+4. Keep `ALLOW_IN_MEMORY_RATE_LIMIT=false`; leave `TRUSTED_IP_HEADER` unset.
+5. Redeploy after saving variables.
+6. Confirm `/api/health` returns `status: "ok"` and `distributedRateLimit: true`.
+7. Complete a production scan.
 
-- Configure Upstash Redis variables; do not enable the in-memory override on distributed hosting.
-- Set `TRUSTED_IP_HEADER` only to a header overwritten by your reverse proxy. Vercel is detected automatically.
-- Enforce an outbound firewall that permits public TCP 80/443 and denies internal/control-plane ranges.
-- Enable provider bot protection or a managed challenge on `/api/scan`.
-- Connect structured JSON logs to a monitoring provider and alert on elevated `scan.failed` or `429` rates.
-- Review provider request-log retention against the privacy policy.
-- Check `/api/health` from the hosting platform and alert on non-200 responses.
+`vercel.json` gives `/api/scan` a 15-second maximum duration. The target timeout is shorter so the route can return a controlled response first.
 
-## Automated quality gates
+### Production operations
 
-`npm run check` runs linting, unit tests, TypeScript, and the production build. `npm run test:e2e` runs desktop/mobile Playwright and accessibility checks. GitHub Actions runs both suites on pull requests and `main`; failed browser-test artifacts are retained for seven days. Dependabot checks npm weekly and Actions monthly.
-
-Static-only hosting is not supported because `/api/scan` requires a server runtime.
+- Use provider bot protection or a managed challenge for abusive traffic.
+- Alert on elevated failures, `429`, `503`, or latency.
+- Monitor `/api/health` and Upstash usage.
+- Review Vercel and Upstash log retention.
+- Apply outbound restrictions where supported.
+- Keep dependencies updated and run all checks before releases.
+- Maintain a security contact and incident-response process.
 
 ## Extending the scanner
 
-Add a new rule to `lib/scanner/rules.ts`, update the weights so the total remains 100, and add scoring tests. Presentation consumes the shared `HeaderFinding` contract, so a standard rule requires no report-component changes.
+Add scored checks in `lib/scanner/rules.ts`, keep total weight at 100, update shared contracts if needed, add secure/partial/malformed/missing test cases, and version methodology changes. Add non-scored signals in `lib/scanner/observations.ts`.
 
-## Privacy and responsible use
+## Responsible use
 
-ShieldCircle does not intentionally retain submitted URLs or scan results. Hosting-provider request logs may still record metadata, so review provider logging settings before deployment. Only scan systems you are authorized to assess, respect target terms and rate limits, and do not treat the report as certification.
+Use ShieldCircle only on public systems you own or are authorized to assess. Do not disrupt services, evade controls, or facilitate unlawful activity. Respect target terms, rate limits, and disclosure processes.
+
+Report ShieldCircle security issues according to [SECURITY.md](SECURITY.md). Report target-site findings to the relevant owner. See [CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md) for development and release details.
 
 ## License
 
