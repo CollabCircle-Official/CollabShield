@@ -1,0 +1,12 @@
+import type { SocialLink } from "@/lib/socials";
+import { Brand } from "./brand";
+import { ExternalIcon } from "./icons";
+
+export function SiteFooter({ links }: { links: SocialLink[] }) {
+  return <footer><div className="shell footer-grid">
+    <div><Brand /><p>Simple visibility into the security headers protecting your web presence.</p></div>
+    <div><h2>Connect with CollabCircle</h2><div className="socials">
+      {links.length ? links.map((link) => <a key={link.label} href={link.href} target="_blank" rel="noreferrer">{link.label}<ExternalIcon /></a>) : <span>Social links coming soon.</span>}
+    </div></div>
+  </div><div className="shell copyright"><span>© {new Date().getFullYear()} CollabCircle. All rights reserved.</span><span>Built to make the web safer.</span></div></footer>;
+}
