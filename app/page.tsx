@@ -17,6 +17,7 @@ export default function Home() {
       </section>
 
       <section id="how-it-works" className="process shell">
+        <h2 className="visually-hidden">How it works</h2>
         <div className="section-intro"><span className="eyebrow">HOW IT WORKS</span><p>CollabShield turns complex response headers into a report you can act on in seconds.</p></div>
         <div className="steps">
           <article><span className="step-number">01</span><GlobeIcon /><h3>Enter a domain</h3><p>Submit any publicly accessible HTTP or HTTPS website.</p></article>

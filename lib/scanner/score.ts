@@ -17,15 +17,17 @@ export function evaluateHeaders(headers: Headers): { findings: HeaderFinding[]; 
     const assessment = rule.evaluate(value, headers);
     const defaultRatio = assessment.status === "pass" ? 1 : assessment.status === "warn" ? .5 : 0;
     const earned = Math.round(rule.weight * (assessment.earnedRatio ?? defaultRatio));
+    const { earnedRatio: _earnedRatio, ...publicAssessment } = assessment;
     const { evaluate: _evaluate, severity: defaultSeverity, ...metadata } = rule;
     void _evaluate;
+    void _earnedRatio;
     return {
       ...metadata,
-      ...assessment,
+      ...publicAssessment,
       value,
       earned,
-      evidence: assessment.evidence ?? [],
-      confidence: assessment.confidence ?? "high",
+      evidence: publicAssessment.evidence ?? [],
+      confidence: publicAssessment.confidence ?? "high",
       severity: assessment.status === "pass" ? "secure" as const : (assessment.severity ?? defaultSeverity),
     } satisfies HeaderFinding;
   });

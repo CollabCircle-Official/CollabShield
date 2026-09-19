@@ -43,7 +43,7 @@ export interface HeaderFinding {
 }
 
 export interface ScanResult {
-  methodologyVersion: "2.0";
+  methodologyVersion: "2.1";
   requestedUrl: string;
   finalUrl: string;
   statusCode: number;
@@ -55,6 +55,24 @@ export interface ScanResult {
   passed: number;
   total: number;
   findings: HeaderFinding[];
+  observations: SecurityObservation[];
+  tls: TlsDetails | null;
+}
+
+export interface SecurityObservation {
+  id: string;
+  title: string;
+  status: "configured" | "advisory" | "disclosure";
+  value: string | null;
+  summary: string;
+}
+
+export interface TlsDetails {
+  protocol: string;
+  validFrom: string;
+  validTo: string;
+  daysRemaining: number;
+  issuer: string;
 }
 
 export interface RedirectHop {

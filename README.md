@@ -23,10 +23,18 @@ It is built with Next.js and deliberately requires no database. The browser subm
 - Report-only CSP, Trusted Types, CSP reporting, and redirect-chain visibility
 - Downloadable JSON reports, clipboard summaries, and print-friendly output
 - Best-effort API throttling with rate-limit response headers
+- Non-scored cross-origin isolation, transport, and technology-disclosure observations
+- TLS certificate expiry/protocol and defensive cookie-attribute observations
+- Bounded HTML sampling for obvious mixed-content and meta-referrer signals
+- Contextual CORS observations without treating the absence of CORS as a vulnerability
+- Local JSON report comparison without retaining scan history
+- Strict per-request nonce CSP and production response security headers
+- GitHub Actions quality gates, Playwright browser tests, and Dependabot updates
 - Weighted 0–100 score and A+ through F grade
 - Severity labels, observed values, attack vectors, and remediation guidance
 - Safe manual redirect handling with validation at every hop
 - SSRF defenses against localhost, private, link-local, and reserved networks
+- DNS-pinned outbound connections that close the validation-to-connection rebinding gap
 - Ten-second request timeout and five-redirect ceiling
 - Responsive black-and-green security console interface
 - Accessible form feedback, semantic report controls, and reduced-motion support
@@ -178,6 +186,10 @@ The names intentionally match CollabCircle's existing environment contract. Thes
 | `Linkedin` | LinkedIn company page | `https://linkedin.com/company/collabcircle` |
 | `X` | X profile | `https://x.com/collabcircle` |
 | `YouTube` | YouTube channel | `https://youtube.com/@collabcircle` |
+| `UPSTASH_REDIS_REST_URL` | Shared production rate-limit endpoint | Provider value |
+| `UPSTASH_REDIS_REST_TOKEN` | Shared production rate-limit credential | Secret provider value |
+| `TRUSTED_IP_HEADER` | Client IP header set by a trusted proxy | `x-forwarded-for` |
+| `ALLOW_IN_MEMORY_RATE_LIMIT` | Local production-like override only | `false` |
 
 Missing or invalid values are omitted from the interface. The `.env` file is excluded from Git; `.env.example` is safe to commit.
 
@@ -200,7 +212,7 @@ Successful responses contain the normalized and final URLs, HTTP status, scan ti
   "requestedUrl": "https://example.com/",
   "finalUrl": "https://example.com/",
   "statusCode": 200,
-  "methodologyVersion": "2.0",
+  "methodologyVersion": "2.1",
   "score": 35,
   "grade": "F",
   "passed": 2,
@@ -212,7 +224,7 @@ Successful responses contain the normalized and final URLs, HTTP status, scan ti
 
 Errors use a suitable HTTP status and `{ "error": "..." }`. Requests are not cached.
 
-The route permits ten scans per client per minute per running application instance. It returns `429 Too Many Requests`, `Retry-After`, and `X-RateLimit-Remaining` when applicable. Because serverless instances are distributed and ephemeral, production deployments should add provider-level rate limiting for globally consistent enforcement.
+The route permits ten scans per client per minute. Production uses a shared Upstash Redis sliding window and fails closed with `503` if distributed limiting is not configured. Development uses an in-memory limiter. Responses include `Retry-After`, `X-RateLimit-Remaining`, and a traceable `X-Request-Id` where applicable.
 
 ## Security model
 
@@ -221,11 +233,12 @@ Fetching user-supplied URLs introduces Server-Side Request Forgery risk. CollabS
 1. Accepting only HTTP and HTTPS URLs without credentials or custom ports.
 2. Resolving the hostname before connecting.
 3. Rejecting any hostname that resolves to local, private, link-local, multicast, or reserved address space.
-4. Disabling automatic redirects and re-running validation for every redirect destination.
-5. Capping requests at five redirects and ten seconds.
-6. Limiting the JSON request body and returning no target response body to the browser.
+4. Pinning the outbound socket to the validated DNS result while retaining TLS hostname verification.
+5. Disabling automatic redirects and repeating resolution, validation, and connection pinning for every destination.
+6. Capping requests at five redirects and ten seconds.
+7. Limiting the JSON request body and returning no target response body to the browser.
 
-For a public deployment, add platform-level rate limiting, abuse monitoring, egress firewall rules, and DNS pinning protection appropriate to the hosting provider. Application-level DNS checks are an important layer but are not a complete substitute for network-level egress controls.
+For a public deployment, add platform-level rate limiting, abuse monitoring, and egress firewall rules appropriate to the hosting provider. Application-level validation and connection pinning are important layers but are not a complete substitute for network-level egress controls.
 
 ## Commands
 
@@ -247,6 +260,20 @@ The project can be deployed to Vercel or another Node.js platform supporting Nex
 3. Ensure the runtime permits outbound DNS and HTTP/HTTPS requests.
 4. Run `npm run build` as the build command.
 5. Add rate limits and platform egress restrictions before advertising a public scanning service.
+
+### Required production controls
+
+- Configure Upstash Redis variables; do not enable the in-memory override on distributed hosting.
+- Set `TRUSTED_IP_HEADER` only to a header overwritten by your reverse proxy. Vercel is detected automatically.
+- Enforce an outbound firewall that permits public TCP 80/443 and denies internal/control-plane ranges.
+- Enable provider bot protection or a managed challenge on `/api/scan`.
+- Connect structured JSON logs to a monitoring provider and alert on elevated `scan.failed` or `429` rates.
+- Review provider request-log retention against the privacy policy.
+- Check `/api/health` from the hosting platform and alert on non-200 responses.
+
+## Automated quality gates
+
+`npm run check` runs linting, unit tests, TypeScript, and the production build. `npm run test:e2e` runs desktop/mobile Playwright and accessibility checks. GitHub Actions runs both suites on pull requests and `main`; failed browser-test artifacts are retained for seven days. Dependabot checks npm weekly and Actions monthly.
 
 Static-only hosting is not supported because `/api/scan` requires a server runtime.
 

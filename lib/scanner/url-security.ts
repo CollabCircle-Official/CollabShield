@@ -33,15 +33,18 @@ function isPrivateIp(address: string): boolean {
 }
 
 /** Reject hostnames resolving to local, private, link-local, or reserved networks. */
-export async function assertPublicTarget(url: URL): Promise<void> {
+export interface ResolvedTarget { address: string; family: 4 | 6 }
+
+export async function assertPublicTarget(url: URL): Promise<ResolvedTarget[]> {
   const hostname = url.hostname.toLowerCase().replace(/\.$/, "");
   if (BLOCKED_HOSTS.has(hostname) || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
     throw new Error("Private and local network targets are not allowed.");
   }
-  let addresses: { address: string }[];
+  let addresses: { address: string; family: number }[];
   try { addresses = await dns.lookup(hostname, { all: true, verbatim: true }); }
   catch { throw new Error("The target domain could not be resolved."); }
   if (!addresses.length || addresses.some(({ address }) => isPrivateIp(address))) {
     throw new Error("Private and local network targets are not allowed.");
   }
+  return addresses.map(({ address, family }) => ({ address, family: family as 4 | 6 }));
 }
