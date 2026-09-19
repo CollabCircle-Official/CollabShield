@@ -10,7 +10,6 @@ export default function Home() {
     <SiteHeader links={socialLinks} />
     <main>
       <section className="hero shell">
-        <div className="status-pill"><span /> SYSTEM ONLINE <em>v1.0</em></div>
         <h1>Know what protects<br />your <span>website.</span></h1>
         <p className="hero-copy">Instantly inspect HTTP security headers, uncover exposed attack surfaces, and get a clear, actionable security grade.</p>
         <Scanner />
@@ -18,7 +17,7 @@ export default function Home() {
       </section>
 
       <section id="how-it-works" className="process shell">
-        <div className="section-intro"><span className="eyebrow">HOW IT WORKS</span><h2>Signal, not noise.</h2><p>CollabShield turns complex response headers into a report you can act on in seconds.</p></div>
+        <div className="section-intro"><span className="eyebrow">HOW IT WORKS</span><p>CollabShield turns complex response headers into a report you can act on in seconds.</p></div>
         <div className="steps">
           <article><span className="step-number">01</span><GlobeIcon /><h3>Enter a domain</h3><p>Submit any publicly accessible HTTP or HTTPS website.</p></article>
           <article><span className="step-number">02</span><ShieldIcon /><h3>We inspect safely</h3><p>Our server-side scanner evaluates six critical security controls.</p></article>
