@@ -20,6 +20,9 @@ It is built with Next.js and deliberately requires no database. The browser subm
 - Six OWASP-aligned security-header checks
 - Context-aware CSP3 analysis for nonces, hashes, `strict-dynamic`, compatibility tokens, multiple policies, and defense-in-depth directives
 - Confidence labels and evidence explaining every decision
+- Report-only CSP, Trusted Types, CSP reporting, and redirect-chain visibility
+- Downloadable JSON reports, clipboard summaries, and print-friendly output
+- Best-effort API throttling with rate-limit response headers
 - Weighted 0–100 score and A+ through F grade
 - Severity labels, observed values, attack vectors, and remediation guidance
 - Safe manual redirect handling with validation at every hop
@@ -197,15 +200,19 @@ Successful responses contain the normalized and final URLs, HTTP status, scan ti
   "requestedUrl": "https://example.com/",
   "finalUrl": "https://example.com/",
   "statusCode": 200,
+  "methodologyVersion": "2.0",
   "score": 35,
   "grade": "F",
   "passed": 2,
   "total": 6,
+  "redirectChain": [{ "url": "https://example.com/", "statusCode": 200 }],
   "findings": []
 }
 ```
 
 Errors use a suitable HTTP status and `{ "error": "..." }`. Requests are not cached.
+
+The route permits ten scans per client per minute per running application instance. It returns `429 Too Many Requests`, `Retry-After`, and `X-RateLimit-Remaining` when applicable. Because serverless instances are distributed and ephemeral, production deployments should add provider-level rate limiting for globally consistent enforcement.
 
 ## Security model
 

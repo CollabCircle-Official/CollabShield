@@ -10,6 +10,7 @@ export function Scanner() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const hasProtocol = /^https?:\/\//i.test(url.trim());
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError(""); setResult(null);
@@ -25,7 +26,7 @@ export function Scanner() {
 
   return <><section id="scanner" className="scanner-card panel"><form onSubmit={submit}>
     <label htmlFor="target"><span className="label-icon"><ShieldIcon /></span><span><strong>Target URL</strong><small>Enter a public website to inspect</small></span></label>
-    <div className="input-row"><span className="protocol">https://</span><input id="target" name="target" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" autoComplete="url" spellCheck="false" required disabled={loading} /><button disabled={loading || !url.trim()}>{loading ? <><span className="spinner" />Scanning…</> : <>Run security scan<ArrowIcon /></>}</button></div>
+    <div className={`input-row ${hasProtocol ? "full-url" : ""}`}>{!hasProtocol && <span className="protocol">https://</span>}<input id="target" name="target" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="example.com" autoComplete="url" spellCheck="false" required disabled={loading} /><button disabled={loading || !url.trim()}>{loading ? <><span className="spinner" />Scanning…</> : <>Run security scan<ArrowIcon /></>}</button></div>
     <p className="form-note"><span /> Only public websites are scanned. No data is stored.</p>
     {error && <div className="error" role="alert">{error}</div>}
   </form></section>{result && <ScanReport result={result} />}</>;

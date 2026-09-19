@@ -14,4 +14,8 @@ describe("CSP analysis", () => {
   it("detects an actually effective unsafe-inline policy", () => {
     expect(analyzeCsp("script-src 'self' 'unsafe-inline'")).toMatchObject({ unsafeInlineEffective: true, strong: false });
   });
+
+  it("reports Trusted Types and violation reporting controls", () => {
+    expect(analyzeCsp("require-trusted-types-for 'script'; report-to csp-endpoint")).toMatchObject({ requiresTrustedTypes: true, hasReporting: true });
+  });
 });

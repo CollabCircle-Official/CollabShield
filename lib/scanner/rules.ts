@@ -4,8 +4,12 @@ import type { HeaderRule, RuleAssessment } from "./types";
 const secureReferrerPolicies = new Set(["no-referrer", "same-origin", "strict-origin", "strict-origin-when-cross-origin"]);
 const sensitivePermissions = ["camera", "microphone", "geolocation"];
 
-function evaluateCsp(value: string | null): RuleAssessment {
-  if (!value) return { status: "fail", severity: "high", earnedRatio: 0, summary: "No enforced Content-Security-Policy header was observed.", evidence: ["The response does not define an enforced CSP."], confidence: "high" };
+function evaluateCsp(value: string | null, headers: Headers): RuleAssessment {
+  if (!value) {
+    const reportOnly = headers.get("content-security-policy-report-only");
+    if (reportOnly) return { status: "warn", severity: "medium", earnedRatio: .25, summary: "A report-only CSP is being tested but is not enforced.", evidence: ["Content-Security-Policy-Report-Only was observed.", "Report-only policies collect violations but do not block content."], confidence: "high" };
+    return { status: "fail", severity: "high", earnedRatio: 0, summary: "No enforced Content-Security-Policy header was observed.", evidence: ["The response does not define an enforced or report-only CSP."], confidence: "high" };
+  }
   const analysis = analyzeCsp(value);
   if (analysis.strong) return { status: "pass", summary: "A nonce/hash-based strict CSP is enforced.", evidence: analysis.evidence, confidence: "high" };
   if (analysis.unsafeInlineEffective) return { status: "fail", severity: "high", earnedRatio: .2, summary: "The effective script policy permits unrestricted inline script execution.", evidence: analysis.evidence, confidence: "high" };

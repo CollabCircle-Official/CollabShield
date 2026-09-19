@@ -49,9 +49,15 @@ export interface ScanResult {
   statusCode: number;
   scannedAt: string;
   durationMs: number;
+  redirectChain: RedirectHop[];
   score: number;
   grade: string;
   passed: number;
   total: number;
   findings: HeaderFinding[];
+}
+
+export interface RedirectHop {
+  url: string;
+  statusCode: number;
 }

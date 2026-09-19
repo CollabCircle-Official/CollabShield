@@ -1,8 +1,29 @@
+"use client";
+
+import { useState } from "react";
 import type { ScanResult } from "@/lib/scanner/types";
 import { AlertIcon, CheckIcon, GlobeIcon } from "./icons";
 import { ScoreRing } from "./score-ring";
 
 export function ScanReport({ result }: { result: ScanResult }) {
+  const [copied, setCopied] = useState(false);
+
+  function downloadReport() {
+    const blob = new Blob([JSON.stringify(result, null, 2)], { type: "application/json" });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = href;
+    link.download = `collabshield-${new URL(result.finalUrl).hostname}-${result.scannedAt.slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(href);
+  }
+
+  async function copySummary() {
+    await navigator.clipboard.writeText(`CollabShield: ${new URL(result.finalUrl).hostname} scored ${result.score}/100 (${result.grade}). ${result.passed}/${result.total} controls fully passed.`);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
   return <section className="report" aria-live="polite">
     <div className="report-summary panel">
       <ScoreRing score={result.score} grade={result.grade} />
@@ -11,6 +32,15 @@ export function ScanReport({ result }: { result: ScanResult }) {
         <div className="metadata"><span><GlobeIcon /> HTTP {result.statusCode}</span><span>{result.durationMs} ms</span><span>{new Date(result.scannedAt).toLocaleString()}</span><span>Methodology v{result.methodologyVersion}</span></div>
       </div>
     </div>
+    <div className="report-actions" aria-label="Report actions">
+      <button type="button" onClick={downloadReport}>Download JSON</button>
+      <button type="button" onClick={copySummary}>{copied ? "Copied" : "Copy summary"}</button>
+      <button type="button" onClick={() => window.print()}>Print report</button>
+    </div>
+    {result.redirectChain.length > 1 && <details className="redirect-chain">
+      <summary>Redirect chain · {result.redirectChain.length - 1} redirect{result.redirectChain.length > 2 ? "s" : ""}</summary>
+      <ol>{result.redirectChain.map((hop) => <li key={`${hop.statusCode}-${hop.url}`}><span>{hop.statusCode}</span><code>{hop.url}</code></li>)}</ol>
+    </details>}
     <div className="report-heading"><div><span className="eyebrow">HEADER ANALYSIS</span><h2>Protection breakdown</h2></div><span>{result.findings.length} checks</span></div>
     <div className="findings">
       {result.findings.map((finding) => <details className={`finding ${finding.status}`} key={finding.id}>

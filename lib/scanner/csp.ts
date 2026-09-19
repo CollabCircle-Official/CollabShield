@@ -23,6 +23,8 @@ export interface CspAnalysis {
   protectsObjects: boolean;
   protectsBaseUri: boolean;
   frameAncestors: string[] | null;
+  requiresTrustedTypes: boolean;
+  hasReporting: boolean;
   evidence: string[];
 }
 
@@ -36,6 +38,8 @@ export function analyzeCsp(value: string): CspAnalysis {
   let protectsObjects = false;
   let protectsBaseUri = false;
   let frameAncestors: string[] | null = null;
+  let requiresTrustedTypes = false;
+  let hasReporting = false;
 
   for (const policy of policies) {
     const scripts = policy.get("script-src") ?? policy.get("default-src") ?? [];
@@ -50,6 +54,8 @@ export function analyzeCsp(value: string): CspAnalysis {
     const base = policy.get("base-uri") ?? [];
     protectsBaseUri ||= contains(base, "'none'") || contains(base, "'self'");
     if (policy.has("frame-ancestors")) frameAncestors = policy.get("frame-ancestors") ?? [];
+    requiresTrustedTypes ||= contains(policy.get("require-trusted-types-for") ?? [], "'script'");
+    hasReporting ||= policy.has("report-uri") || policy.has("report-to");
   }
 
   const evidence = [
@@ -60,10 +66,12 @@ export function analyzeCsp(value: string): CspAnalysis {
   ];
   if (hasUnsafeEval) evidence.push("unsafe-eval remains active and weakens script execution controls.");
   if (!unsafeInlineEffective && /'unsafe-inline'/i.test(value)) evidence.push("unsafe-inline is a compatibility token and is ignored by modern CSP3 script processing here.");
+  if (requiresTrustedTypes) evidence.push("Trusted Types are required for script injection sinks.");
+  if (hasReporting) evidence.push("CSP violation reporting is configured.");
 
   return {
     strong: hasNonceOrHash && hasStrictDynamic && protectsObjects && protectsBaseUri && !hasUnsafeEval,
     hasNonceOrHash, hasStrictDynamic, unsafeInlineEffective, hasUnsafeEval,
-    protectsObjects, protectsBaseUri, frameAncestors, evidence,
+    protectsObjects, protectsBaseUri, frameAncestors, requiresTrustedTypes, hasReporting, evidence,
   };
 }

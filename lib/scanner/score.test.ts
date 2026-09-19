@@ -36,6 +36,11 @@ describe("security scoring", () => {
     expect(result.findings.find((finding) => finding.id === "x-frame-options")).toMatchObject({ status: "pass", earned: 15 });
   });
 
+  it("distinguishes report-only CSP from an enforced policy", () => {
+    const result = evaluateHeaders(new Headers({ "content-security-policy-report-only": "default-src 'self'; report-to csp" }));
+    expect(result.findings[0]).toMatchObject({ status: "warn", severity: "medium", earned: 8 });
+  });
+
   it("gives partial credit to weak values", () => {
     const result = evaluateHeaders(new Headers({
       "content-security-policy": "script-src 'unsafe-inline'",
