@@ -1,5 +1,15 @@
 export type Severity = "critical" | "high" | "medium" | "low" | "secure";
 export type RuleStatus = "pass" | "warn" | "fail";
+export type Confidence = "high" | "medium";
+
+export interface RuleAssessment {
+  status: RuleStatus;
+  summary: string;
+  severity?: Exclude<Severity, "secure">;
+  earnedRatio?: number;
+  evidence?: string[];
+  confidence?: Confidence;
+}
 
 export interface HeaderRule {
   id: string;
@@ -10,7 +20,8 @@ export interface HeaderRule {
   attackVector: string;
   severity: Exclude<Severity, "secure">;
   weight: number;
-  evaluate: (value: string | null) => Pick<HeaderFinding, "status" | "summary">;
+  standard: string;
+  evaluate: (value: string | null, headers: Headers) => RuleAssessment;
 }
 
 export interface HeaderFinding {
@@ -26,9 +37,13 @@ export interface HeaderFinding {
   summary: string;
   weight: number;
   earned: number;
+  standard: string;
+  evidence: string[];
+  confidence: Confidence;
 }
 
 export interface ScanResult {
+  methodologyVersion: "2.0";
   requestedUrl: string;
   finalUrl: string;
   statusCode: number;

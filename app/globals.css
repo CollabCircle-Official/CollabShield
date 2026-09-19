@@ -657,6 +657,31 @@ a {
 .finding-body > p {
   margin-top: 0;
 }
+.finding-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0 0 18px;
+  color: #6f7e72;
+  font: 9px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.finding-context strong {
+  color: #a9b7ac;
+  font-weight: 500;
+}
+.evidence {
+  margin-bottom: 18px;
+}
+.evidence ul {
+  margin: 7px 0 0;
+  padding-left: 18px;
+  color: #91a096;
+}
+.evidence li + li {
+  margin-top: 4px;
+}
 .finding-body b {
   display: block;
   color: #647168;

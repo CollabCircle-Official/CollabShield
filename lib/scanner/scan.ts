@@ -33,6 +33,7 @@ export async function scanTarget(input: string): Promise<ScanResult> {
   const assessment = evaluateHeaders(response.headers);
   await response.body?.cancel();
   return {
+    methodologyVersion: "2.0",
     requestedUrl: requested.toString(), finalUrl: current.toString(), statusCode: response.status,
     scannedAt: new Date().toISOString(), durationMs: Math.round(performance.now() - started),
     ...assessment, passed: assessment.findings.filter((item) => item.status === "pass").length,

@@ -31,7 +31,7 @@ export function ScoreGuide() {
         <button className="dialog-close" type="button" aria-label="Close scoring guide" onClick={() => setOpen(false)}>×</button>
         <span className="eyebrow">SCORING GUIDE</span>
         <h2>Score and grade table</h2>
-        <p>Each header check earns full points when it passes, half points for a warning, and zero points when it fails.</p>
+        <p>Each control earns evidence-based partial credit. Warnings retain points according to the strength of the protection observed; confirmed strong configurations receive full credit.</p>
         <table>
           <thead><tr><th scope="col">Security score</th><th scope="col">Grade</th></tr></thead>
           <tbody>{GRADES.map(([range, grade]) => <tr key={grade}><td>{range}</td><td><strong>{grade}</strong></td></tr>)}</tbody>

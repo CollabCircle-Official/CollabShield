@@ -10,20 +10,24 @@ export function gradeForScore(score: number): string {
   return "F";
 }
 
-/** Evaluate all rules. Warnings receive half of the rule's points. */
+/** Evaluate all rules using each rule's evidence-based partial-credit ratio. */
 export function evaluateHeaders(headers: Headers): { findings: HeaderFinding[]; score: number; grade: string } {
   const findings = HEADER_RULES.map((rule) => {
     const value = headers.get(rule.header);
-    const assessment = rule.evaluate(value);
-    const earned = assessment.status === "pass" ? rule.weight : assessment.status === "warn" ? rule.weight / 2 : 0;
+    const assessment = rule.evaluate(value, headers);
+    const defaultRatio = assessment.status === "pass" ? 1 : assessment.status === "warn" ? .5 : 0;
+    const earned = Math.round(rule.weight * (assessment.earnedRatio ?? defaultRatio));
+    const { evaluate: _evaluate, severity: defaultSeverity, ...metadata } = rule;
+    void _evaluate;
     return {
-      ...rule,
+      ...metadata,
       ...assessment,
       value,
       earned,
-      severity: assessment.status === "pass" ? "secure" as const : rule.severity,
-      evaluate: undefined,
-    } as unknown as HeaderFinding;
+      evidence: assessment.evidence ?? [],
+      confidence: assessment.confidence ?? "high",
+      severity: assessment.status === "pass" ? "secure" as const : (assessment.severity ?? defaultSeverity),
+    } satisfies HeaderFinding;
   });
   const score = Math.round(findings.reduce((sum, finding) => sum + finding.earned, 0));
   return { findings, score, grade: gradeForScore(score) };

@@ -18,6 +18,8 @@ It is built with Next.js and deliberately requires no database. The browser subm
 
 - Public HTTP/HTTPS domain scanning through a Next.js serverless route
 - Six OWASP-aligned security-header checks
+- Context-aware CSP3 analysis for nonces, hashes, `strict-dynamic`, compatibility tokens, multiple policies, and defense-in-depth directives
+- Confidence labels and evidence explaining every decision
 - Weighted 0–100 score and A+ through F grade
 - Severity labels, observed values, attack vectors, and remediation guidance
 - Safe manual redirect handling with validation at every hop
@@ -34,14 +36,14 @@ It is built with Next.js and deliberately requires no database. The browser subm
 
 | Header | Weight | Primary risk addressed | Strong result |
 | --- | ---: | --- | --- |
-| `Content-Security-Policy` | 30 | XSS and content injection | Present without obvious `unsafe-inline` or `unsafe-eval` script allowances |
-| `Strict-Transport-Security` | 20 | MitM interception and SSL stripping | Present with `max-age` of at least 180 days |
-| `X-Frame-Options` | 15 | Clickjacking | `DENY` or `SAMEORIGIN` |
+| `Content-Security-Policy` | 30 | XSS and content injection | Nonce/hash-based strict CSP with supporting defense-in-depth directives |
+| `Strict-Transport-Security` | 20 | MitM interception and SSL stripping | Present with `max-age` of at least one year |
+| Frame protection | 15 | Clickjacking | CSP `frame-ancestors`, or `X-Frame-Options` for legacy compatibility |
 | `X-Content-Type-Options` | 15 | MIME confusion | `nosniff` |
-| `Referrer-Policy` | 10 | URL and browsing-context leakage | Header is present |
-| `Permissions-Policy` | 10 | Unnecessary browser capability access | Header is present |
+| `Referrer-Policy` | 10 | URL and browsing-context leakage | Explicit privacy-preserving value; browser fallback is identified separately |
+| `Permissions-Policy` | 10 | Unnecessary browser capability access | Common sensitive capabilities are explicitly restricted |
 
-A passing rule earns its full weight, a warning earns half, and a failed rule earns zero. The weights total 100.
+The weights total 100. Passing controls receive full credit. Warnings and partially effective controls receive a rule-specific proportion based on the protection observed. A missing optional defense may retain limited fallback credit when modern browsers provide a meaningful default; that state is clearly identified with its confidence level.
 
 | Score | Grade |
 | ---: | :---: |
@@ -52,7 +54,7 @@ A passing rule earns its full weight, a warning earns half, and a failed rule ea
 | 50–64 | D |
 | 0–49 | F |
 
-CollabShield reports configuration signals; it does not prove that a target is secure and is not a replacement for a full security audit or penetration test.
+CollabShield reports configuration signals; it does not prove that a target is secure and is not a replacement for a full security audit or penetration test. A failed check means that a header-level defense was not observed—not that an exploitable vulnerability has been confirmed.
 
 ## System flow
 
