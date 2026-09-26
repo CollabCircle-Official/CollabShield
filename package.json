@@ -17,11 +17,11 @@
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.1.0",
-    "@upstash/redis": "^1.38.4",
+    "@upstash/redis": "^1.39.0",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "undici": "^6.28.1"
+    "undici": "^8.11.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
